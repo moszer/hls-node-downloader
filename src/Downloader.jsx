@@ -1,26 +1,26 @@
 import React, { useState } from 'react';
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 import parseHls from './parseHls';
+import './App.css'
 
 const Downloader = () => {
-  const [downloadState, setDownloadState] = useState('START_DOWNLOAD');
   const [additionalMessage, setAdditionalMessage] = useState('');
   const [downloadBlobUrl, setDownloadBlobUrl] = useState('');
   const [url, setUrl] = useState('');
 
   async function startDownload() {
-    setDownloadState('STARTING_DOWNLOAD');
-    console.log('[INFO] Job started');
+    setAdditionalMessage('STARTING_DOWNLOAD');
+    setAdditionalMessage('[INFO] Job started');
     
     try {
-      console.log('[INFO] Fetching segments');
+      setAdditionalMessage('[INFO] Fetching segments');
       const getSegments = await parseHls({ hlsUrl: url, headers: '' });
       if (getSegments.type !== 'SEGMENT')
         throw new Error('Invalid segment URL. Please refresh the page.');
 
       const segments = getSegments.data.map((s, i) => ({ ...s, index: i }));
 
-      console.log('[INFO] Initializing ffmpeg');
+      setAdditionalMessage('[INFO] Initializing ffmpeg');
       const ffmpeg = createFFmpeg({
         mainName: 'main',
         corePath:
@@ -29,9 +29,9 @@ const Downloader = () => {
       });
 
       await ffmpeg.load();
-      console.log('[SUCCESS] ffmpeg loaded');
+      setAdditionalMessage('[SUCCESS] ffmpeg loaded');
 
-      setDownloadState('SEGMENT_STARTING_DOWNLOAD');
+      setAdditionalMessage('SEGMENT_STARTING_DOWNLOAD');
 
       const segmentChunks = [];
       for (let i = 0; i < segments.length; i += 10) {
@@ -59,9 +59,9 @@ const Downloader = () => {
                 await fetchFile(await getFile.arrayBuffer())
               );
               successSegments.push(fileId);
-              console.log(`[SUCCESS] Segment downloaded ${segment.index}`);
+              setAdditionalMessage(`[SUCCESS] Segment downloaded ${segment.index}`);
             } catch (error) {
-              console.log(`[ERROR] Segment download error ${segment.index}`);
+              setAdditionalMessage(`[ERROR] Segment download error ${segment.index}`);
             }
           })
         );
@@ -73,10 +73,10 @@ const Downloader = () => {
         return aIndex - bIndex;
       });
 
-      console.log('successSegments', successSegments);
+      setAdditionalMessage('successSegments', successSegments);
 
-      console.log('[INFO] Stitching segments started');
-      setDownloadState('SEGMENT_STITCHING');
+      setAdditionalMessage('[INFO] Stitching segments started');
+      setAdditionalMessage('SEGMENT_STITCHING');
 
       await ffmpeg.run(
         '-i',
@@ -86,7 +86,7 @@ const Downloader = () => {
         'output.mp4' // Change output file extension to mp4
       );
 
-      console.log('[INFO] Stitching segments finished');
+      setAdditionalMessage('[INFO] Stitching segments finished');
 
       successSegments.forEach((segment) => {
         try {
@@ -104,7 +104,7 @@ const Downloader = () => {
       }
 
       setAdditionalMessage('');
-      setDownloadState('JOB_FINISHED');
+      setAdditionalMessage('JOB_FINISHED');
       setDownloadBlobUrl(
         URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' })) // Change MIME type to video/mp4
       );
@@ -114,41 +114,45 @@ const Downloader = () => {
       }, 1000);
     } catch (error) {
       setAdditionalMessage('');
-      setDownloadState('DOWNLOAD_ERROR');
+      setAdditionalMessage('DOWNLOAD_ERROR');
       console.log(error.message);
     }
   }
 
   return (
     <div>
-      <input
+      <input 
+        className='text-box'
         type="text"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
         placeholder="Enter HLS video URL"
       />
-      <button onClick={startDownload}>Download HLS Video</button>
-      {additionalMessage && <p>{additionalMessage}</p>}
+      <div className='button-start-download'>
+        <button onClick={startDownload}>Download HLS Video</button>
+        {additionalMessage && <p className='text-log-download'>{additionalMessage}</p>}
+      </div>
 
       {downloadBlobUrl && (
         <div className="flex gap-2 items-center">
           <a
             href={downloadBlobUrl}
             download={`hls-downloader-${new Date().toLocaleDateString().replace(/\//g, '-')}.mp4`}
-            className="px-4 py-1.5 bg-gray-900 hover:bg-gray-700 text-white rounded-md mt-5"
+            className="Button-download"
           >
             Download now
           </a>
 
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-1.5 bg-gray-900 hover:bg-gray-700 text-white rounded-md mt-5"
+            className=""
           >
             Create new
           </button>
         </div>
       )}
     </div>
+    
   );
 };
 
