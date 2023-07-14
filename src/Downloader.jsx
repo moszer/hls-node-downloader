@@ -141,12 +141,6 @@ const Downloader = () => {
       setdownloadState(DOWNLOAD_ERROR);
       console.log(error.message);
     }
-
-    //function download
-    const downloadLink = document.createElement("a");
-    downloadLink.href = downloadBlobUrl;
-    downloadLink.download = "output.mp4";
-    downloadLink.click();
   }
 
   return (
@@ -159,6 +153,28 @@ const Downloader = () => {
       />
       <button onClick={startDownload}>Download HLS Video</button>
       {additionalMessage && <p>{additionalMessage}</p>}
+
+      {downloadBlobUrl && (
+        <div className="flex gap-2 items-center">
+          <a
+            href={downloadBlobUrl}
+            download={`hls-downloader-${new Date()
+              .toLocaleDateString()
+              .replace(/[/]/g, "-")}.mp4`} // .mp4 is widely supported, and player knows the mimetype so it doesn't matter
+            className="px-4 py-1.5 bg-gray-900 hover:bg-gray-700 text-white rounded-md mt-5"
+          >
+            Download now
+          </a>
+
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-1.5 bg-gray-900 hover:bg-gray-700 text-white rounded-md mt-5"
+          >
+            Create new
+          </button>
+        </div>
+      )}
+
     </div>
   );
 };
