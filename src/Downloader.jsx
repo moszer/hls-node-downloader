@@ -111,7 +111,7 @@ const Downloader = () => {
 
       setTimeout(() => {
         ffmpeg.exit();
-      }, 1000);
+      }, 5000);
     } catch (error) {
       setAdditionalMessage('');
       setAdditionalMessage('DOWNLOAD_ERROR');
